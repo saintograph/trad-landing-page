@@ -320,22 +320,22 @@ function SignupBlock() {
   const [email, setEmail] = useStateL('');
   const [submitted, setSubmitted] = useStateL(false);
 
-  const handleFormSubmit = async (e) => {
+  const handleFormSubmit = (e) => {
     e.preventDefault();
     if (email.includes('@')) {
       const formData = new FormData(e.target);
       formData.append("access_key", "03cdbaa7-5731-46f6-9783-3754725f7fa8");
-      
-      const response = await fetch("https://api.web3forms.com/submit", {
+
+      fetch("https://api.web3forms.com/submit", {
         method: "POST",
         body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          setSubmitted(true);
+        }
       });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        setSubmitted(true);
-      }
     }
   };
 
@@ -350,7 +350,7 @@ function SignupBlock() {
         <div>
           <div className="lbl-cyan" style={{marginBottom:12}}>FIG. 06 · CLOSED BETA · 2026 Q3</div>
           <h2 style={{margin:'0 0 14px', fontSize:'var(--h1)', lineHeight:1.04, fontWeight:600, letterSpacing:'-.01em'}}>
-            We're letting in the<br/>first hundred teams.
+            We're letting in the<br/>first fifty teams.
           </h2>
           <p style={{margin:0, color:'var(--dim)', maxWidth:520, fontSize:13.5, lineHeight:1.6}}>
             Trad is in closed beta with a handful of university labs and small commercial
