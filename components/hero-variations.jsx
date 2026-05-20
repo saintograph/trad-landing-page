@@ -8,7 +8,7 @@ function HeroNav({ compact = false }) {
     <nav style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding: compact?'14px 24px':'18px 32px', borderBottom:'1px solid var(--line)' }}>
       <div style={{display:'flex', alignItems:'center', gap:18}}>
         <Wordmark/>
-        <span style={{color:'var(--dim)', fontSize:11, letterSpacing:'.14em'}}>· <small>by</small> FRONTIER EXPRESS</span>
+        <span style={{color:'var(--dim)', fontSize:11, letterSpacing:'.14em'}}><small>by</small> FRONTIER EXPRESS</span>
       </div>
       <div style={{display:'flex', alignItems:'center', gap:18, fontSize:11.5, letterSpacing:'.12em', color:'var(--dim)'}}>
         {/* <a href="#trade" style={{textDecoration:'none', color:'inherit'}}>TRADE SPACE</a>
