@@ -5,31 +5,25 @@ const { useState: useStateS, useMemo: useMemoS } = React;
 // Isometric 3U CubeSat — body-mounted solar panels, UHF stub antenna.
 // Pure SVG. Theme-aware via CSS custom properties.
 //
-// Key geometry fixes vs. previous version:
-//   • U = height*0.17  (was 0.11 — body was tiny)
-//   • iz.y = -U*0.65   (compressed z so 1:3 aspect doesn't look impossibly tall)
-//   • cy = height/2 - U/2  (shifts origin so full bounding box is vertically centred)
+// Key geometry:
+//   • U = min(w,h)*0.14  — 1U in pixels; sized so the 3U body fills ~56% of canvas height
+//   • iz.y = -U           — NO z-compression; 3U reads as clearly 3× taller than wide
+//   • cy = height/2-U/2   — centres the full bounding box (top rhombus → base rhombus)
 //   • All callouts placed RIGHT-of-body so no lines cross the body silhouette
-function CubesatSchematic({ width = 560, height = 520, configKey = 0, showCallouts = true, accent = 'cyan' }) {
+function CubesatSchematic({ width = 800, height = 700, configKey = 0, showCallouts = true, accent = 'cyan' }) {
   const ACC = accent === 'purple' ? 'var(--purple)' : 'var(--cyan)';
+  const U = Math.min(width, height) * 0.15;
 
-  // ── geometry ──────────────────────────────────────────────────────────────
-  const U = Math.min(width, height) * 0.17;   // 1 unit (1U) in pixels
-
-  // Isometric axes — 30°, z-axis compressed by 0.65 so the 1:3 body
-  // reads as a recognisable box rather than an impossibly tall stick.
   const c30 = Math.cos(Math.PI / 6), s30 = Math.sin(Math.PI / 6);
-  const ix = { x:  c30*U, y: s30*U };     // +X: right-forward
-  const iy = { x: -c30*U, y: s30*U };     // +Y: left-forward
-  const iz = { x:  0,     y: -U*0.65 };   // +Z: up (compressed)
+  const ix = { x:  c30*U, y: s30*U };
+  const iy = { x: -c30*U, y: s30*U };
+  const iz = { x:  0,     y: -U    };
 
-  const W = 1, D = 1, H = 3;  // 1U × 1U × 3U
+  const W = 1, D = 1, H = 3;
 
-  // cy is shifted up by U/2 so the FULL bounding box (top rhombus → base
-  // rhombus) is vertically centred on the canvas, not just the body mid-point.
-  const cx = width  * 0.50;
+  const cx = width  * 0.45;
   const cy = height * 0.50 - U * 0.50;
-  const zMid = (H / 2) * iz.y;   // = -0.975*U  (centering offset)
+  const zMid = (H / 2) * iz.y;
 
   function pt(x, y, z) {
     return {
@@ -38,7 +32,6 @@ function CubesatSchematic({ width = 560, height = 520, configKey = 0, showCallou
     };
   }
 
-  // 8 box corners
   const A  = pt(0,0,0), B  = pt(W,0,0), C  = pt(W,D,0), Dp = pt(0,D,0);
   const E  = pt(0,0,H), F  = pt(W,0,H), G  = pt(W,D,H), Hp = pt(0,D,H);
 
@@ -47,16 +40,15 @@ function CubesatSchematic({ width = 560, height = 520, configKey = 0, showCallou
   const add  = (a,b)    => ({ x:a.x+b.x, y:a.y+b.y });
   const scl  = (v,s)    => ({ x:v.x*s,   y:v.y*s   });
 
-  // Per-face span vectors (full span, parallelogram axes)
-  const fS = { x:B.x-A.x, y:B.y-A.y };   // front A→B  width
-  const fT = { x:E.x-A.x, y:E.y-A.y };   // front A→E  height  (fT.x = 0)
-  const rS = { x:C.x-B.x, y:C.y-B.y };   // right B→C  depth
-  const rT = { x:F.x-B.x, y:F.y-B.y };   // right B→F  height
-  const tS = { x:F.x-E.x, y:F.y-E.y };   // top   E→F  width
-  const tT = { x:Hp.x-E.x, y:Hp.y-E.y }; // top   E→Hp depth
+  const fS = { x:B.x-A.x, y:B.y-A.y };
+  const fT = { x:E.x-A.x, y:E.y-A.y };
+  const rS = { x:C.x-B.x, y:C.y-B.y };
+  const rT = { x:F.x-B.x, y:F.y-B.y };
+  const tS = { x:F.x-E.x, y:F.y-E.y };
+  const tT = { x:Hp.x-E.x, y:Hp.y-E.y };
+  const lS = { x:C.x-Dp.x, y:C.y-Dp.y };
+  const lT = { x:Hp.x-Dp.x, y:Hp.y-Dp.y };
 
-  // Solar-cell grid on a parallelogram face.
-  // 2 cols × 6 rows = clean readability (matches 2 rows of cells per 1U).
   function cellGrid(p0, vS, vT, cols, rows, color) {
     const el = [];
     for (let r = 0; r <= rows; r++) {
@@ -74,33 +66,41 @@ function CubesatSchematic({ width = 560, height = 520, configKey = 0, showCallou
     return el;
   }
 
-  // Feature points
-  const payC    = add(add(A, scl(fS,.5)), scl(fT,1/6));   // centre of bottom 1U, front face
-  const antBase = lerp(E, F, 0.5);                          // mid of front-top edge
-  const antTip  = add(antBase, add(scl(ix,.2), scl(iz,1.7))); // whip tip
+  function isoBox(x, y, z, w, d, h, fillT, fillR, fillL, stroke) {
+    const p2 = pt(x+w, y, z);
+    const p3 = pt(x+w, y+d, z);
+    const p4 = pt(x, y+d, z);
+    const p5 = pt(x, y, z+h);
+    const p6 = pt(x+w, y, z+h);
+    const p7 = pt(x+w, y+d, z+h);
+    const p8 = pt(x, y+d, z+h);
+    return (
+      <g key={`${x}-${y}-${z}`}>
+        <path d={poly([p5, p6, p7, p8])} fill={fillT} stroke={stroke} strokeWidth=".8"/>
+        <path d={poly([p2, p3, p7, p6])} fill={fillR} stroke={stroke} strokeWidth=".8"/>
+        <path d={poly([p4, p3, p7, p8])} fill={fillL} stroke={stroke} strokeWidth=".8"/>
+      </g>
+    );
+  }
 
-  // 1U structural rails (solid dividers at 1/3 and 2/3 up each visible face)
-  const fRails = [1,2].map(i=>({ a:lerp(A,E,i/3), b:lerp(B,F,i/3) }));
+  const payC  = add(add(Dp, scl(lS,.5)), scl(lT,1/6));
+  const antBase = lerp(Hp, G, 0.5);
+  const antTip  = add(antBase, scl(iz,1.2));
+
+  const fRails = [1,2].map(i=>({ a:lerp(Dp,Hp,i/3), b:lerp(C,G,i/3) }));
   const rRails = [1,2].map(i=>({ a:lerp(B,F,i/3), b:lerp(C,G,i/3) }));
 
-  // ── callouts: ALL right-of-body so leader lines never cross the body ──────
-  // Anchors sorted top→bottom so leaders don't cross each other either.
-  const lx = width * 0.695;   // label box left edge  (≈388 for 560-wide canvas)
-  const bw = 128;              // label box width
+  const lx = width * 0.695;
+  const bw = 155;
 
   const callouts = showCallouts ? [
-    // 1. UHF antenna tip  (topmost anchor)
-    { anchor: antTip,
-      ty: height*0.10, label:'UHF ANT · 437 MHz',   acc:ACC         },
-    // 2. solar cells — anchor on upper-right of front face
-    { anchor: add(add(A, scl(fS,.65)), scl(fT,.38)),
-      ty: height*0.34, label:'BODY SOLAR · 28 W',   acc:'var(--fg)' },
-    // 3. star tracker — centre of right face
-    { anchor: { x:(B.x+C.x+G.x+F.x)/4, y:(B.y+C.y+G.y+F.y)/4 },
-      ty: height*0.56, label:'STAR TRACKER',          acc:'var(--fg)' },
-    // 4. payload aperture (bottommost anchor)
-    { anchor: payC,
-      ty: height*0.78, label:'MWIR PAYLOAD',          acc:ACC         },
+    { anchor: antTip, ty: height*0.10, label:'UHF ANT · 437 MHz', acc:ACC },
+    { anchor: pt(0.5, 0.5, 2.4), ty: height*0.22, label:'REACTION WHEELS', acc:ACC },
+    { anchor: add(add(Dp, scl(lS,.65)), scl(lT,.38)), ty: height*0.34, label:'BODY SOLAR · 28 W', acc:'var(--fg)' },
+    { anchor: pt(0.5, 0.5, 1.9), ty: height*0.46, label:'OBC · ARM CORTEX', acc:'var(--fg)' },
+    { anchor: pt(0.5, 0.5, 1.35), ty: height*0.58, label:'LI-ION BATTERY', acc:'#c3e88d' },
+    { anchor: { x:(B.x+C.x+G.x+F.x)/4, y:(B.y+C.y+G.y+F.y)/4 }, ty: height*0.70, label:'STAR TRACKER', acc:'var(--fg)' },
+    { anchor: payC, ty: height*0.82, label:'MWIR PAYLOAD', acc:'#f78c6c' },
   ] : [];
 
   return (
@@ -112,9 +112,8 @@ function CubesatSchematic({ width = 560, height = 520, configKey = 0, showCallou
         </marker>
       </defs>
 
-      {/* ── DIMENSION LINE — anchored to left silhouette (Hp → Dp) ───────── */}
       {(() => {
-        const dlx = Hp.x - 18;   // 18px left of left silhouette
+        const dlx = Hp.x - 24;
         const tmid = (Hp.y + Dp.y) / 2;
         return (
           <g>
@@ -130,11 +129,14 @@ function CubesatSchematic({ width = 560, height = 520, configKey = 0, showCallou
         );
       })()}
 
-      {/* ── TOP FACE  (E F G Hp) ─────────────────────────────────────────── */}
-      <path d={poly([E,F,G,Hp])} fill="var(--bg3)" stroke="var(--fg)" strokeWidth="1.3"/>
-      {/* subdued cell grid on top face */}
+      {isoBox(0.2, 0.2, 0.05, 0.6, 0.6, 0.8, '#1a1c23', '#22242b', '#22242b', '#f78c6c')}
+      {isoBox(0.15, 0.15, 1.1, 0.7, 0.7, 0.5, '#1a1c23', '#22242b', '#22242b', '#c3e88d')}
+      {isoBox(0.1, 0.1, 1.8, 0.8, 0.8, 0.05, '#22242b', '#1a1c23', '#1a1c23', 'var(--fg)')}
+      {isoBox(0.1, 0.1, 1.95, 0.8, 0.8, 0.05, '#22242b', '#1a1c23', '#1a1c23', 'var(--fg)')}
+      {isoBox(0.3, 0.3, 2.2, 0.4, 0.4, 0.4, '#1a1c23', '#22242b', '#22242b', ACC)}
+
+      <path d={poly([E,F,G,Hp])} fill="var(--bg3)" fillOpacity=".75" stroke="var(--fg)" strokeWidth="1.3"/>
       <g opacity=".38">{cellGrid(E, tS, tT, 2, 2, ACC)}</g>
-      {/* S-band patch antenna footprint — inset parallelogram on top face */}
       {(() => {
         const tl = add(add(E, scl(tS,.28)), scl(tT,.2));
         const tr = add(add(E, scl(tS,.72)), scl(tT,.2));
@@ -142,7 +144,7 @@ function CubesatSchematic({ width = 560, height = 520, configKey = 0, showCallou
         const bl = add(add(E, scl(tS,.28)), scl(tT,.8));
         return (
           <>
-            <path d={poly([tl,tr,br,bl])} fill="var(--bg2)" stroke={ACC} strokeWidth=".8"/>
+            <path d={poly([tl,tr,br,bl])} fill="var(--bg2)" fillOpacity=".75" stroke={ACC} strokeWidth=".8"/>
             <line x1={lerp(tl,tr,.5).x.toFixed(1)} y1={lerp(tl,tr,.5).y.toFixed(1)}
                   x2={lerp(bl,br,.5).x.toFixed(1)} y2={lerp(bl,br,.5).y.toFixed(1)}
                   stroke={ACC} strokeWidth=".5"/>
@@ -153,15 +155,13 @@ function CubesatSchematic({ width = 560, height = 520, configKey = 0, showCallou
         );
       })()}
 
-      {/* ── RIGHT FACE  (B C G F) ────────────────────────────────────────── */}
-      <path d={poly([B,C,G,F])} fill="var(--bg3)" stroke="var(--fg)" strokeWidth="1.3"/>
+      <path d={poly([B,C,G,F])} fill="var(--bg3)" fillOpacity=".75" stroke="var(--fg)" strokeWidth="1.3"/>
       <g opacity=".72">{cellGrid(B, rS, rT, 2, 6, 'var(--cyanDim)')}</g>
       {rRails.map((r,i)=>(
         <line key={i} x1={r.a.x.toFixed(1)} y1={r.a.y.toFixed(1)}
               x2={r.b.x.toFixed(1)} y2={r.b.y.toFixed(1)}
               stroke="var(--fg)" strokeWidth="2"/>
       ))}
-      {/* 1U labels on right face */}
       {[1,2].map(i=>{
         const p = lerp(lerp(B,F,i/3), lerp(C,G,i/3), 0.62);
         return <text key={i} x={(p.x+3).toFixed(1)} y={(p.y+2).toFixed(1)}
@@ -169,34 +169,28 @@ function CubesatSchematic({ width = 560, height = 520, configKey = 0, showCallou
                      style={{letterSpacing:'.1em'}}>{i}U</text>;
       })}
 
-      {/* ── FRONT FACE  (A B F E) ────────────────────────────────────────── */}
-      <path d={poly([A,B,F,E])} fill="var(--bg2)" stroke="var(--fg)" strokeWidth="1.3"/>
-      <g opacity=".72">{cellGrid(A, fS, fT, 2, 6, 'var(--cyanDim)')}</g>
+      <path d={poly([Dp,C,G,Hp])} fill="var(--bg2)" fillOpacity=".75" stroke="var(--fg)" strokeWidth="1.3"/>
+      <g opacity=".72">{cellGrid(Dp, lS, lT, 2, 6, 'var(--cyanDim)')}</g>
       {fRails.map((r,i)=>(
         <line key={i} x1={r.a.x.toFixed(1)} y1={r.a.y.toFixed(1)}
               x2={r.b.x.toFixed(1)} y2={r.b.y.toFixed(1)}
               stroke="var(--fg)" strokeWidth="2"/>
       ))}
 
-      {/* Payload aperture — bottom 1U, centre of front face */}
       <circle cx={payC.x.toFixed(1)} cy={payC.y.toFixed(1)} r={(U*.24).toFixed(1)}
-              fill="var(--bg)" stroke={ACC} strokeWidth="1.3"/>
+              fill="var(--bg)" stroke="#f78c6c" strokeWidth="1.3"/>
       <circle cx={payC.x.toFixed(1)} cy={payC.y.toFixed(1)} r={(U*.14).toFixed(1)}
-              fill="none" stroke={ACC} strokeWidth=".8" strokeDasharray="1.5 2.5"/>
-      <circle cx={payC.x.toFixed(1)} cy={payC.y.toFixed(1)} r={(U*.045).toFixed(1)} fill={ACC}/>
+              fill="none" stroke="#f78c6c" strokeWidth=".8" strokeDasharray="1.5 2.5"/>
+      <circle cx={payC.x.toFixed(1)} cy={payC.y.toFixed(1)} r={(U*.045).toFixed(1)} fill="#f78c6c"/>
 
-      {/* ── UHF STUB ANTENNA ─────────────────────────────────────────────── */}
-      {/* ground bar along front-top edge */}
       <line x1={(antBase.x-tS.x*.3).toFixed(1)} y1={(antBase.y-tS.y*.3).toFixed(1)}
             x2={(antBase.x+tS.x*.3).toFixed(1)} y2={(antBase.y+tS.y*.3).toFixed(1)}
             stroke={ACC} strokeWidth="1.6"/>
-      {/* whip */}
       <line x1={antBase.x.toFixed(1)} y1={antBase.y.toFixed(1)}
             x2={antTip.x.toFixed(1)}  y2={antTip.y.toFixed(1)}
             stroke={ACC} strokeWidth="1.6"/>
       <circle cx={antTip.x.toFixed(1)} cy={antTip.y.toFixed(1)} r="3" fill={ACC}/>
 
-      {/* ── CALLOUTS ─────────────────────────────────────────────────────── */}
       {callouts.map((c,i)=>(
         <g key={i}>
           <line x1={c.anchor.x.toFixed(1)} y1={c.anchor.y.toFixed(1)}
@@ -210,13 +204,11 @@ function CubesatSchematic({ width = 560, height = 520, configKey = 0, showCallou
         </g>
       ))}
 
-      {/* ── DRAWING STAMP ────────────────────────────────────────────────── */}
       <text x="6" y={height-10} fill="var(--dimmer)" fontSize="9" fontFamily="JetBrains Mono"
-            style={{letterSpacing:'.14em'}}>ISO · 30° · 1:4 · DWG 0420-003 REV C</text>
+            style={{letterSpacing:'.14em'}}>ISO · 30° · 1:4 · DWG 0420-003 REV D</text>
     </svg>
   );
 }
-
 
 // ─── MBSE block diagram — used in landing page ──────────────────────────────
 function MBSEDiagram({ width = 720, height = 360 }) {

@@ -319,6 +319,26 @@ function ConstellationDiagram() {
 function SignupBlock() {
   const [email, setEmail] = useStateL('');
   const [submitted, setSubmitted] = useStateL(false);
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    if (email.includes('@')) {
+      const formData = new FormData(e.target);
+      formData.append("access_key", "03cdbaa7-5731-46f6-9783-3754725f7fa8");
+      
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setSubmitted(true);
+      }
+    }
+  };
+
   return (
     <div className="brk" style={{position:'relative', border:'1px solid var(--lineHi)', padding:'56px 48px', background:'var(--bg2)'}}>
       <span style={{position:'absolute',top:-1,left:-1,width:14,height:14,borderTop:'1px solid var(--cyan)',borderLeft:'1px solid var(--cyan)'}}/>
@@ -338,11 +358,13 @@ function SignupBlock() {
           </p>
         </div>
 
-        <form onSubmit={(e)=>{e.preventDefault(); if(email.includes('@')) setSubmitted(true);}}
+        <form onSubmit={handleFormSubmit}
               style={{display:'flex', flexDirection:'column', gap:12}}>
           <label className="lbl-fg">WORK EMAIL</label>
           <div style={{display:'flex'}}>
             <input
+              name="email"
+              type="email"
               value={email}
               onChange={e=>setEmail(e.target.value)}
               placeholder="systems@yourlab.edu"
@@ -350,12 +372,12 @@ function SignupBlock() {
             />
             <button type="submit"
                     style={{padding:'0 22px', background:'var(--cyan)', border:'1px solid var(--cyan)', color:'#031319', font:'inherit', cursor:'pointer', fontWeight:600, fontSize:12, letterSpacing:'.08em'}}>
-              {submitted ? 'YOU\'RE IN ✓' : 'NOTIFY ME →'}
+              {submitted ? 'YOU ARE IN' : 'NOTIFY ME'}
             </button>
           </div>
           <div style={{display:'flex', gap:16, color:'var(--dim)', fontSize:11}}>
             <span><span style={{color:'var(--cyan)'}}>●</span> No spam. One launch email.</span>
-            <span><span style={{color:'var(--cyan)'}}>●</span> Academic & .gov priority.</span>
+            <span><span style={{color:'var(--cyan)'}}>●</span> Small teams & academic priority.</span>
           </div>
         </form>
       </div>
