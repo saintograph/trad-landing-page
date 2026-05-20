@@ -319,31 +319,41 @@ function ConstellationDiagram() {
 function SignupBlock() {
   const [email, setEmail] = useStateL('');
   const [submitted, setSubmitted] = useStateL(false);
+  const [error, setError] = useStateL('');
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    if (email.includes('@')) {
-      fetch("https://api.web3forms.com/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({
-          access_key: "03cdbaa7-5731-46f6-9783-3754725f7fa8",
-          email: email
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          setSubmitted(true);
-        }
-      })
-      .catch(error => {
-        console.error(error);
-      });
+    setError('');
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!emailRegex.test(email)) {
+      setError('PLEASE ENTER A VALID WORK EMAIL');
+      return;
     }
+
+    fetch("https://api.web3forms.com/submit", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify({
+        access_key: "03cdbaa7-5731-46f6-9783-3754725f7fa8",
+        email: email
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        setSubmitted(true);
+      } else {
+        setError('SUBMISSION FAILED. TRY AGAIN.');
+      }
+    })
+    .catch(err => {
+      setError('NETWORK ERROR.');
+    });
   };
 
   return (
@@ -357,7 +367,7 @@ function SignupBlock() {
         <div>
           <div className="lbl-cyan" style={{marginBottom:12}}>FIG. 06 · CLOSED BETA · 2026 Q3</div>
           <h2 style={{margin:'0 0 14px', fontSize:'var(--h1)', lineHeight:1.04, fontWeight:600, letterSpacing:'-.01em'}}>
-            We're letting in the<br/>first fifty teams.
+            We're letting in the<br/>first hundred teams.
           </h2>
           <p style={{margin:0, color:'var(--dim)', maxWidth:520, fontSize:13.5, lineHeight:1.6}}>
             Trad is in closed beta with a handful of university labs and small commercial
@@ -367,24 +377,34 @@ function SignupBlock() {
 
         <form onSubmit={handleFormSubmit}
               style={{display:'flex', flexDirection:'column', gap:12}}>
-          <label className="lbl-fg">WORK EMAIL</label>
+          
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-end'}}>
+            <label className="lbl-fg">WORK EMAIL</label>
+            {error && <span style={{color:'#f78c6c', fontSize:10, fontWeight:600, letterSpacing:'.08em'}}>{error}</span>}
+          </div>
+
           <div style={{display:'flex'}}>
             <input
               name="email"
               type="email"
+              required
               value={email}
-              onChange={e=>setEmail(e.target.value)}
+              onChange={e => {
+                setEmail(e.target.value);
+                if (error) setError('');
+              }}
               placeholder="systems@yourlab.edu"
-              style={{flex:1, padding:'14px 16px', background:'var(--bg)', border:'1px solid var(--lineHi)', color:'var(--fg)', font:'inherit', fontSize:14, outline:'none', borderRight:'none'}}
+              style={{flex:1, padding:'14px 16px', background:'var(--bg)', border: error ? '1px solid #f78c6c' : '1px solid var(--lineHi)', color:'var(--fg)', font:'inherit', fontSize:14, outline:'none', borderRight: error ? '1px solid #f78c6c' : 'none'}}
             />
             <button type="submit"
                     style={{padding:'0 22px', background:'var(--cyan)', border:'1px solid var(--cyan)', color:'#031319', font:'inherit', cursor:'pointer', fontWeight:600, fontSize:12, letterSpacing:'.08em'}}>
               {submitted ? 'YOU ARE IN' : 'NOTIFY ME'}
             </button>
           </div>
+          
           <div style={{display:'flex', gap:16, color:'var(--dim)', fontSize:11}}>
             <span><span style={{color:'var(--cyan)'}}>●</span> No spam. One launch email.</span>
-            <span><span style={{color:'var(--cyan)'}}>●</span> Small teams & academic priority.</span>
+            <span><span style={{color:'var(--cyan)'}}>●</span> Academic & .gov priority.</span>
           </div>
         </form>
       </div>
