@@ -407,7 +407,7 @@ function Footer() {
         </div>
         <FooterCol title="PRODUCT" items={['Trade space', 'Component DB', 'MBSE export', 'CLI · SDK', 'Pricing']}/>
         <FooterCol title="RESOURCES" items={['Documentation', 'Component catalog', 'Methods paper', 'Changelog', 'Status']}/>
-        <FooterCol title="COMPANY" items={['Frontier Express', 'Open roles', 'Press kit', 'Contact', 'security@trad.dev']}/>
+        <FooterCol title="COMPANY" items={['Frontier Express', 'Open roles', 'Press kit', 'Contact', 'hello@frontier.express']}/>
       </div>
       <div className="trad-footer-bot" style={{paddingTop:18, borderTop:'1px solid var(--line)', color:'var(--dim)', fontSize:11, letterSpacing:'.12em'}}>
         <span>© 2026 FRONTIER EXPRESS · TRAD V0.9 · CLOSED BETA</span>
