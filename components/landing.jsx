@@ -2,7 +2,7 @@
 
 const { useState: useStateL, useEffect: useEffectL } = React;
 
-function LandingPage({ width } = {}) {
+function LandingPage({ width, mode = 'dark', onToggleMode } = {}) {
   const [selPoint, setSelPoint] = useStateL(null);
 
   // When used inside the design canvas an explicit pixel width is passed;
@@ -16,7 +16,7 @@ function LandingPage({ width } = {}) {
   return (
     <div className="trad-scope" style={{ width: rootWidth, background:'var(--bg)', color:'var(--fg)', minHeight:600 }}>
       {/* nav */}
-      <HeroNav/>
+      <HeroNav mode={mode} onToggleMode={onToggleMode}/>
 
       {/* HERO — schematic-first */}
       <section data-screen-label="01 Hero" style={{ position:'relative' }}>
@@ -27,9 +27,11 @@ function LandingPage({ width } = {}) {
               <span className="lbl">TRADE SPACE EXPLORATION · CUBESAT ONLY</span>
             </div>
             <h1 style={{ margin:0, fontSize:'var(--h1)', fontWeight:600, lineHeight:1.02, letterSpacing:'-.015em' }}>
-              Ten thousand<br/>
+              {/* Ten thousand<br/>
               possible CubeSat designs.<br/>
-              <span style={{color:'var(--cyan)'}}>Find the best.</span>
+              <span style={{color:'var(--cyan)'}}>Find the best.</span> */}
+              Don't pick parts.<br/>
+              <span style={{color:'var(--cyan)'}}>Pick a design.</span>
             </h1>
             <p style={{margin:0, color:'var(--dim)', maxWidth:500, fontSize:14, lineHeight:1.6}}>
               Trad is a cloud workbench for systems engineers exploring the

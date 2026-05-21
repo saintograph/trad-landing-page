@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" />
 <style>
-  html, body { margin:0; padding:0; background:#0a0a0a; -webkit-font-smoothing:antialiased; }
+  html, body { margin:0; padding:0; background:#efece4; -webkit-font-smoothing:antialiased; }
   * { box-sizing:border-box; }
 </style>
 </head>
@@ -36,11 +36,16 @@
 
 <script type="text/babel">
 function TradApp() {
+  const [mode, setMode] = React.useState('light');
+  React.useEffect(() => {
+    document.body.style.background = mode === 'dark' ? '#0a0a0a' : '#efece4';
+  }, [mode]);
+  const toggleMode = () => setMode(m => m === 'dark' ? 'light' : 'dark');
   return (
     <>
-      <ThemeStyle mode="dark" density="regular" />
+      <ThemeStyle mode={mode} density="regular" />
       <TradStyles />
-      <LandingPage />
+      <LandingPage mode={mode} onToggleMode={toggleMode} />
     </>
   );
 }
