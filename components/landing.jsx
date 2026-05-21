@@ -28,15 +28,15 @@ function LandingPage({ width } = {}) {
             </div>
             <h1 style={{ margin:0, fontSize:'var(--h1)', fontWeight:600, lineHeight:1.02, letterSpacing:'-.015em' }}>
               Ten thousand<br/>
-              CubeSat designs,<br/>
-              <span style={{color:'var(--cyan)'}}>one Pareto front.</span>
+              possible CubeSat designs.<br/>
+              <span style={{color:'var(--cyan)'}}>Find the best.</span>
             </h1>
             <p style={{margin:0, color:'var(--dim)', maxWidth:500, fontSize:14, lineHeight:1.6}}>
               Trad is a cloud workbench for systems engineers exploring the
-              design space of 1U–12U CubeSats. Pick parts from a 4 218-SKU
+              design space of 1U - 12U CubeSats. Pick parts from a 4 218-SKU
               catalog, propagate requirements through MBSE, and surface the
               configurations that actually close — mass, power, link budget,
-              ΔV, and cost, all at once.
+              ΔV, and cost, all at <em>once</em>.
             </p>
             <div style={{display:'flex', gap:10, marginTop:6}}>
               <a href="#signup" className="btn btn-pri">NOTIFY ME <Arr/></a>
